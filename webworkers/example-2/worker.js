@@ -1,6 +1,6 @@
 const calculatePrice = e => {
   postMessage(
-    e.data.map(product => {
+    e.data.chunk.map(product => {
       return {
         ...product,
         calculatedPrice: product.price * 1.12 * Math.random(0.1 - 1.1),
@@ -8,5 +8,7 @@ const calculatePrice = e => {
     }),
   );
 };
+
+const random = () => Math.floor(Math.random() * 100);
 
 onmessage = calculatePrice;

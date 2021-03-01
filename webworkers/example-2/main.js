@@ -5,6 +5,8 @@ const DOM = {
   $databox: document.getElementById('databox'),
 };
 let result = [];
+let workers = [];
+let tasks = [];
 
 function load() {
   DOM.$send.addEventListener('click', init);
@@ -15,9 +17,10 @@ function init() {
   const $numProducts = DOM.$products.value;
   const products = generateProducts($numProducts);
   const dividedProducts = divideArray(products, +$numWorkers);
-  const workers = generateWorkers($numWorkers);
+  workers = generateWorkers($numWorkers);
   for (let i = 0; i < $numWorkers; i++) {
-    workers[i].postMessage(dividedProducts[i]);
+    tasks = [...tasks, {workerId: workers[i].id, chunk: dividedProducts[i]}];
+    workers[i].worker.postMessage(tasks[i]);
   }
   DOM.$databox.innerHTML = '';
 }
@@ -29,6 +32,10 @@ function printProducts(e) {
     html += `<p>ID: ${product.id} | Precio: ${product.price} | Precio calculado: ${product.calculatedPrice}</p>`;
   });
   DOM.$databox.innerHTML = html;
+}
+
+function printError(err) {
+  workers = workers.filter(worker => worker.id !== err.id);
 }
 
 function chunk(array, chunk_size) {
@@ -44,11 +51,11 @@ function divideArray(array, chunks) {
 }
 
 function generateWorkers(numWorkers) {
-  let workers = [];
   for (let i = 0; i < numWorkers; i++) {
     const worker = new Worker('worker.js');
     worker.addEventListener('message', printProducts);
-    workers = [...workers, worker];
+    worker.addEventListener('message', printError);
+    workers = [...workers, {id: i, worker: worker}];
   }
   return workers;
 }
